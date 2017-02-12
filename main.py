@@ -38,6 +38,7 @@ DARKGRAY  = ( 40,  40,  40)
 YELLOW    = (255, 255,   0)
 ORANGE    = (255, 165,   0)
 BLUE      = (  0,   0, 255)
+BROWN     = (139,   69, 19)
 BGCOLOR = BLACK
 
 def main():
@@ -107,9 +108,16 @@ class Gra:
                 self.Plansza[Obiekt[1]][Obiekt[2]].walkable = False
                 self.Plansza[Obiekt[1]][Obiekt[2]].obiekt = Smieciarka(Obiekt[1],Obiekt[2],self.get())
                 self.Elementy.append(self.Plansza[Obiekt[1]][Obiekt[2]].obiekt)
-            elif Obiekt[0] == "sk":
+            elif Obiekt[0] == "sm" or Obiekt[0] == "sp" or Obiekt[0] == "sk" or Obiekt[0] == "sl":
                 self.Plansza[Obiekt[1]][Obiekt[2]].walkable = False
-                self.Plansza[Obiekt[1]][Obiekt[2]].obiekt = Smietnik(Obiekt[1],Obiekt[2],self.get(),ID)
+                if Obiekt[0] == "sm":
+                    self.Plansza[Obiekt[1]][Obiekt[2]].obiekt = SmietnikMakulatura(Obiekt[1],Obiekt[2],self.get(),ID)
+                elif Obiekt[0] == "sp":
+                    self.Plansza[Obiekt[1]][Obiekt[2]].obiekt = SmietnikPlastik(Obiekt[1],Obiekt[2],self.get(),ID)
+                elif Obiekt[0] == "sk":
+                    self.Plansza[Obiekt[1]][Obiekt[2]].obiekt = SmietnikSzklo(Obiekt[1],Obiekt[2],self.get(),ID)
+                elif Obiekt[0] == "sl":
+                    self.Plansza[Obiekt[1]][Obiekt[2]].obiekt = SmietnikAluminium(Obiekt[1],Obiekt[2],self.get(),ID)
                 self.Elementy.append(self.Plansza[Obiekt[1]][Obiekt[2]].obiekt)
                 self.Smietniki[ID] = self.Plansza[Obiekt[1]][Obiekt[2]].obiekt
                 ID += 1
@@ -124,8 +132,10 @@ class Gra:
 
     def zapisz(self, nazwa):
         f = open(nazwa, 'w')
-        for i in self.Elementy:
-            f.write(i.nazwa + "," + str(i.Poz[0]) + "," + str(i.Poz[1]) + "\n")
+        for y in range(0,CELLCOUNTY):
+            for x in range(0,CELLCOUNTX):
+                if self.Plansza[x][y].obiekt != None:
+                    f.write(self.Plansza[x][y].obiekt.nazwa + "," + str(self.Plansza[x][y].obiekt.Poz[0]) + "," + str(self.Plansza[x][y].obiekt.Poz[1]) + "\n")
 
     def menu(self):
         myszka = 0, 0
@@ -200,11 +210,7 @@ class Gra:
             if MouseClicked:
                 if self.Plansza[myszka[0]/CELLSIZE][myszka[1]/CELLSIZE].obiekt == None:
                     #thread.start_new_thread( Smieciarka.znajdzTrase, ( self.Plansza[myszka[0]/CELLSIZE][myszka[1]/CELLSIZE], ) )
-                    r = Tk()
-                    r.withdraw()
-                    clip = r.clipboard_get()
-                    textinput.input_string = clip
-                    textinput.cursor_position = len(clip)
+                    pass
         
             for i in self.Elementy:
                 i.tick(Ticks)
@@ -223,8 +229,15 @@ class Gra:
         smieciarkaNaPlanszy = False
 
         wybor = 0
+        ID = 0
 
         self.wczytajPoziom(self.zapytanie("Podaj nazwe poziomu, ktory chcesz edytowac.") + ".txt")
+
+        for i in self.Elementy:
+            if i.nazwa == "sa":
+                smieciarkaNaPlanszy = True
+
+        obiekt = Smieciarka(myszka[0]/CELLSIZE,myszka[1]/CELLSIZE,self.get())
     
         while True:
             leftMouseClicked = False
@@ -241,8 +254,28 @@ class Gra:
                         self.zapisz(self.zapytanie("Podaj nazwe poziomu, pod ktora chcesz go zapisac.") + ".txt")
                     if event.key == K_SPACE:
                         wybor += 1
-                        if wybor == 4:
+                        if wybor == 7:
                             wybor = 0
+
+                        if wybor == 0:
+                            obiekt = Smieciarka(myszka[0]/CELLSIZE,myszka[1]/CELLSIZE,self.get())
+                            smieciarkaNaPlanszy = True
+                        elif wybor == 1:
+                            obiekt = SmietnikMakulatura(myszka[0]/CELLSIZE,myszka[1]/CELLSIZE,self.get(),ID)
+                            obiekt.PunktOdbioru = (-1,-1)
+                        elif wybor == 2:
+                            obiekt = SmietnikPlastik(myszka[0]/CELLSIZE,myszka[1]/CELLSIZE,self.get(),ID)
+                            obiekt.PunktOdbioru = (-1,-1)
+                        elif wybor == 3:
+                            obiekt = SmietnikSzklo(myszka[0]/CELLSIZE,myszka[1]/CELLSIZE,self.get(),ID)
+                            obiekt.PunktOdbioru = (-1,-1)
+                        elif wybor == 4:
+                            obiekt = SmietnikAluminium(myszka[0]/CELLSIZE,myszka[1]/CELLSIZE,self.get(),ID)
+                            obiekt.PunktOdbioru = (-1,-1)
+                        elif wybor == 5:
+                            obiekt = Sciana(myszka[0]/CELLSIZE,myszka[1]/CELLSIZE,self.get())
+                        elif wybor == 6:
+                            obiekt = Wysypisko(myszka[0]/CELLSIZE,myszka[1]/CELLSIZE,self.get())
                 elif event.type == MOUSEMOTION:
                     myszka = event.pos
                 elif event.type == MOUSEBUTTONUP:
@@ -255,34 +288,52 @@ class Gra:
             self.DISPLAYSURF.fill(BGCOLOR)
             self.rysujSiatke()
 
-            ID = 0
-
             if leftMouseClicked == True:
                 if self.Plansza[myszka[0]/CELLSIZE][myszka[1]/CELLSIZE].obiekt == None:
-                    if wybor == 0:
+                    if wybor == 0 and not smieciarkaNaPlanszy:
                         a = Smieciarka(myszka[0]/CELLSIZE,myszka[1]/CELLSIZE,self.get())
                         self.Plansza[myszka[0]/CELLSIZE][myszka[1]/CELLSIZE].obiekt = a
                         smieciarkaNaPlanszy = True
                     elif wybor == 1:
-                        a = Smietnik(myszka[0]/CELLSIZE,myszka[1]/CELLSIZE,self.get(),ID)
+                        a = SmietnikMakulatura(myszka[0]/CELLSIZE,myszka[1]/CELLSIZE,self.get(),ID)
                         self.Plansza[myszka[0]/CELLSIZE][myszka[1]/CELLSIZE].obiekt = a
                         ID += 1
                     elif wybor == 2:
+                        a = SmietnikPlastik(myszka[0]/CELLSIZE,myszka[1]/CELLSIZE,self.get(),ID)
+                        self.Plansza[myszka[0]/CELLSIZE][myszka[1]/CELLSIZE].obiekt = a
+                        ID += 1
+                    elif wybor == 3:
+                        a = SmietnikSzklo(myszka[0]/CELLSIZE,myszka[1]/CELLSIZE,self.get(),ID)
+                        self.Plansza[myszka[0]/CELLSIZE][myszka[1]/CELLSIZE].obiekt = a
+                        ID += 1
+                    elif wybor == 4:
+                        a = SmietnikAluminium(myszka[0]/CELLSIZE,myszka[1]/CELLSIZE,self.get(),ID)
+                        self.Plansza[myszka[0]/CELLSIZE][myszka[1]/CELLSIZE].obiekt = a
+                        ID += 1
+                    elif wybor == 5:
                         a = Sciana(myszka[0]/CELLSIZE,myszka[1]/CELLSIZE,self.get())
                         self.Plansza[myszka[0]/CELLSIZE][myszka[1]/CELLSIZE].obiekt = a
-                    elif wybor == 3:
+                    elif wybor == 6:
                         a = Wysypisko(myszka[0]/CELLSIZE,myszka[1]/CELLSIZE,self.get())
                         self.Plansza[myszka[0]/CELLSIZE][myszka[1]/CELLSIZE].obiekt = a
-                    self.Elementy.append(a)
+                    try:
+                        self.Elementy.append(a)
+                    except UnboundLocalError:
+                        pass
 
             if rightMouseClicked == True:
                 self.Plansza[myszka[0]/CELLSIZE][myszka[1]/CELLSIZE].obiekt = None
                 for i in self.Elementy:
                     if i.isClicked():
+                        if i.nazwa == "sa":
+                            smieciarkaNaPlanszy = False
                         self.Elementy.remove(i)
 
             for i in self.Elementy:
                 i.rysuj()
+
+            obiekt.Poz = (myszka[0]/CELLSIZE,myszka[1]/CELLSIZE)
+            obiekt.rysuj()
    
             pygame.display.update()
             self.FPSCLOCK.tick(FPS)
@@ -291,7 +342,8 @@ class Gra:
         textinput = pygame_textinput.TextInput()
         textinput.set_text_color(RED)
         textinput.set_cursor_color(RED)
-        textinput.input_string = "tester"
+        textinput.input_string = "tester3"
+        textinput.cursor_position = len(textinput.input_string)
         x = CELLCOUNTX/2
         y = WINDOWHEIGHT/2-2*CELLSIZE
         rect = pygame.Rect(x, y, CELLSIZE*61, CELLSIZE*5)
@@ -375,7 +427,7 @@ class Smieciarka(Aktor):
         self.zaladunek = 0
         self.TextZaladunek = self.gra.BASICFONT.render(str(self.zaladunek)+ "%", 1, RED)
         self.LastTick = 0
-        self.cooldown = 0
+        self.cooldown = 100
         self.Trasa = []
         self.odpowiadacz = Odpowiadacz(gra)
         self.KolejkaZadan = Queue.Queue()
@@ -439,6 +491,10 @@ class Smieciarka(Aktor):
         return 1*dstX + 1*(dstY-dstX)
 
     def znajdzTrase(self, Cel):
+        if Cel.walkable == False:
+            self.odpowiadacz.ustawDopowiedz(U"Trasa niemożliwa")
+            self.Lock = False
+            return
         self.CelDojazdu = (Cel.x,Cel.y)
         self.Lock = True
         #self.odpowiadacz.ustawDopowiedz("Szukam trasy...")
@@ -469,6 +525,9 @@ class Smieciarka(Aktor):
 
                     if neighbour not in openSet:
                         heapq.heappush(openSet,neighbour)
+        self.odpowiadacz.ustawDopowiedz(U"Trasa niemożliwa")
+        self.Lock = False
+        return
 
     def zrekonstruujTrase(self, start, koniec):
         Trasa = list()
@@ -483,7 +542,7 @@ class Smieciarka(Aktor):
 
     def oproznijKosz(self):
         for neighbour in self.getNeighbours(self.gra.Plansza[self.Poz[0]][self.Poz[1]]):
-            if neighbour.obiekt != None and neighbour.obiekt.nazwa == "sk":
+            if neighbour.obiekt != None and (neighbour.obiekt.nazwa == "sk" or neighbour.obiekt.nazwa == "sm" or neighbour.obiekt.nazwa == "sl" or neighbour.obiekt.nazwa == "sp"):
                 if neighbour.obiekt.podajIloscSmieci()/10 + self.zaladunek <= 100:
                     self.zaladuj(neighbour.obiekt.oproznij()/10)
                 else:
@@ -502,16 +561,29 @@ class Smieciarka(Aktor):
         
 class Smietnik(Aktor):
     
-    def __init__(self,x,y,gra,ID):
-        Aktor.__init__(self,x,y,"sk",gra)
+    def __init__(self,x,y,gra,ID,kolor,nazwa):
+        Aktor.__init__(self,x,y,nazwa,gra)
         self.iloscSmieci = 0
-        self.TextIloscSmieci = self.gra.BASICFONT.render(str(self.iloscSmieci)+ "%", 1, BLUE)
+        self.IDFONT = pygame.font.SysFont("monospace", 10)
+        self.TextIloscSmieci = self.gra.BASICFONT.render(str(self.iloscSmieci)+ "%", 1 , RED)
         self.LastTick = 0
-        self.cooldown = random.randint(1000, 2000)
-        self.kolor = GREEN
+        self.cooldown = random.randint(2000, 3000)
+        self.kolor = kolor
         self.ID = ID
-        self.TextID = self.gra.BASICFONT.render(str(ID), 1, RED)
+        if ID < 100:
+            self.TextID = self.gra.BASICFONT.render(str(ID), 1, RED)
+        else:
+            self.TextID = self.IDFONT.render(str(ID), 1, RED)
         self.PunktOdbioru = self.znajdzWolnePole()
+        if CELLCOUNTX/2 > x:
+            self.Zachod = True
+        else:
+            self.Zachod = False
+        if CELLCOUNTY/2 > y:
+            self.Polnoc = True
+        else:
+            self.Polnoc = False
+      
     
     def dodaj(self, ilosc):
         if (self.iloscSmieci + ilosc <= 100):
@@ -536,24 +608,36 @@ class Smietnik(Aktor):
                 return (sprawdzx,sprawdzy)
 
     def rysuj(self):
-        if self.iloscSmieci <= 25:
-            kolor = GREEN
-        elif self.iloscSmieci <= 50:
-            kolor = YELLOW
-        elif self.iloscSmieci <= 75:
-            kolor = ORANGE
-        else:
-            kolor = RED
-        
-        pygame.draw.rect(self.gra.DISPLAYSURF, kolor, self.rect)
+        self.rect = pygame.Rect(self.Poz[0] * CELLSIZE, self.Poz[1] * CELLSIZE, CELLSIZE, CELLSIZE)
+        pygame.draw.rect(self.gra.DISPLAYSURF, self.kolor, self.rect)
         self.gra.DISPLAYSURF.blit(self.TextIloscSmieci, (self.Poz[0] * CELLSIZE, self.Poz[1] * CELLSIZE))
         self.gra.DISPLAYSURF.blit(self.TextID, (self.PunktOdbioru[0] * CELLSIZE, self.PunktOdbioru[1] * CELLSIZE))
 
     def tick(self, ticks):
-        self.TextIloscSmieci = self.gra.BASICFONT.render(str(self.iloscSmieci) +"%", 1, BLUE)
+        self.TextIloscSmieci = self.gra.BASICFONT.render(str(self.iloscSmieci) +"%", 1, RED)
         if ticks - self.LastTick >= self.cooldown:
             self.LastTick = ticks
             self.dodaj(1)
+
+class SmietnikMakulatura(Smietnik):
+
+    def __init__(self,x,y,gra,ID):
+        Smietnik.__init__(self,x,y,gra,ID,BLUE,"sm")
+
+class SmietnikPlastik(Smietnik):
+
+    def __init__(self,x,y,gra,ID):
+        Smietnik.__init__(self,x,y,gra,ID,YELLOW,"sp")
+
+class SmietnikSzklo(Smietnik):
+
+    def __init__(self,x,y,gra,ID):
+        Smietnik.__init__(self,x,y,gra,ID,GREEN,"sk")
+
+class SmietnikAluminium(Smietnik):
+
+    def __init__(self,x,y,gra,ID):
+        Smietnik.__init__(self,x,y,gra,ID,ORANGE,"sl")
 
 class Sciana(Aktor):
 
@@ -561,6 +645,7 @@ class Sciana(Aktor):
         Aktor.__init__(self,x,y,"sc",gra)
 
     def rysuj(self):
+        self.rect = pygame.Rect(self.Poz[0] * CELLSIZE, self.Poz[1] * CELLSIZE, CELLSIZE, CELLSIZE)
         pygame.draw.rect(self.gra.DISPLAYSURF, DARKGRAY, self.rect)
 
 class Wysypisko(Aktor):
@@ -578,7 +663,8 @@ class Wysypisko(Aktor):
                 return (sprawdzx,sprawdzy)
 
     def rysuj(self):
-        pygame.draw.rect(self.gra.DISPLAYSURF, BLUE, self.rect)
+        self.rect = pygame.Rect(self.Poz[0] * CELLSIZE, self.Poz[1] * CELLSIZE, CELLSIZE, CELLSIZE)
+        pygame.draw.rect(self.gra.DISPLAYSURF, BROWN, self.rect)
 
 class Przycisk(Aktor):
     
